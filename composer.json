@@ -1,0 +1,40 @@
+{
+    "name": "silverstripe/silverstripe-search-service-elastic",
+    "description": "Provide Elastic Enterprise Search Functionality to Silverstripe Search Service",
+    "type": "silverstripe-vendormodule",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "SilverStripe",
+            "homepage": "http://silverstripe.com"
+        },
+        {
+            "name": "The SilverStripe Community",
+            "homepage": "http://silverstripe.org"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "silverstripe/framework": "^5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "tractorcow/silverstripe-fluent": "^7",
+        "slevomat/coding-standard": "~8.8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SilverStripe\\SearchServiceElastic\\": "src/",
+            "SilverStripe\\SearchServiceElastic\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "composer/installers": true,
+            "silverstripe/vendor-plugin": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}
