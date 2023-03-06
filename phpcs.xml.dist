@@ -100,6 +100,10 @@
         <exclude name="SlevomatCodingStandard.Complexity.Cognitive.ComplexityTooHigh"/>
         <!-- We require property promotion -->
         <exclude name="SlevomatCodingStandard.Classes.DisallowConstructorPropertyPromotion.DisallowedConstructorPropertyPromotion"/>
+        <!-- We often have unused properties if we're overriding a Silverstripe method -->
+        <exclude name="SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter"/>
+        <!-- Don't force single line. Sometime multiline is just easier to read -->
+        <exclude name="SlevomatCodingStandard.Functions.RequireSingleLineCall.RequiredSingleLineCall"/>
     </rule>
 
     <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
@@ -112,7 +116,7 @@
     <rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
         <properties>
             <!-- Set the root namespace for our src dir and phpunit dir. Please change these as required -->
-            <property name="rootNamespaces" type="array" value="src=>SilverStripe\SearchServiceElastic,tests=>Terraformers\KeysForCache\Tests"/>
+            <property name="rootNamespaces" type="array" value="src=>SilverStripe\SearchServiceElastic,tests=>SilverStripe\SearchServiceElastic\Tests"/>
             <property name="ignoredNamespaces" type="array" value="Slevomat\Services"/>
         </properties>
     </rule>
