@@ -2,6 +2,10 @@
 
 Elastic Service provider for [Silverstripe Search Service](https://github.com/silverstripe/silverstripe-search-service).
 
+This module uses Elastic's [Enterprise Search PHP library](https://github.com/elastic/enterprise-search-php) to provide
+the ability to index content for an Elastic App Search engine. This module **does not** provide any method for
+performing searches on your engines - we've added some [suggestions](#searching) though.
+
 ## Requirements
 
 * php: ^8.1
@@ -60,3 +64,20 @@ useful to you are:
 
 * [Configuration](https://github.com/silverstripe/silverstripe-search-service/blob/2/docs/en/configuration.md)
 * [Customisation](https://github.com/silverstripe/silverstripe-search-service/blob/2/docs/en/customising.md)
+
+## Searching
+
+Elastic themselves provide a headless [Search UI](https://docs.elastic.co/search-ui/overview) JS library, which can
+be used with vanilla JS or any framework like React, Vue, etc.
+
+There are two main libraries:
+
+* [@elastic/search-ui-app-search-connector](https://www.npmjs.com/package/@elastic/search-ui-app-search-connector)
+  * Provides a class to help you connect to your Elastic App Search API.
+* [@elastic/search-ui](https://www.npmjs.com/package/@elastic/search-ui)
+  * Provides a class that allows you to perform searches and manage your search state.
+
+If you are using React, then there is also
+[@elastic/react-search-ui](https://www.npmjs.com/package/@elastic/react-search-ui), which provides interface components.
+
+If you are not using React, then the creation of the view will be up to you.
