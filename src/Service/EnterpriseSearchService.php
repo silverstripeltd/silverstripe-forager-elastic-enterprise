@@ -458,20 +458,42 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         $this->handleError($response);
     }
 
-    private function fetchEngines(): array
+    /**
+     * @throws IndexingServiceException
+     */
+    private function fetchPaginatedEngines(int $page = 1): array
     {
+
+        $listEngines = new ListEngines();
+        $listEngines->setCurrentPage($page);
+
         $response = $this->getClient()
             ->appSearch()
-            ->listEngines(new ListEngines())
+            ->listEngines($listEngines)
             ->asArray();
 
         $this->handleError($response);
 
-        if (!array_key_exists('results', $response)) {
+        if (!array_key_exists('results', $response) || !is_array($response['results'])) {
             throw new IndexingServiceException('Invalid response format for listEngines; missing "results"');
         }
 
-        $results = $response['results'] ?? [];
+        return $response;
+    }
+
+    private function fetchEngines(): array
+    {
+        $response = $this->fetchPaginatedEngines(1);
+
+        $results = $response['results'];
+
+        if (isset($response['meta']['page']['total_pages']) && $response['meta']['page']['total_pages'] > 1) {
+            foreach (range(2, $response['meta']['page']['total_pages']) as $page) {
+                $paginatedResponse = $this->fetchPaginatedEngines($page);
+
+                $results = array_merge($results, $paginatedResponse['results']);
+            }
+        }
 
         return array_column($results, 'name');
     }
