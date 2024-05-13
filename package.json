@@ -1,0 +1,7 @@
+{
+  "name": "silverstripe-search-service-elastic",
+  "description": "Elastic App Search implementation of search indexing and configuration requirements",
+  "main": "README.md",
+  "repository": "https://github.com/silverstripe/silverstripe-search-service-elastic",
+  "author": "Silverstripe Ltd"
+}
