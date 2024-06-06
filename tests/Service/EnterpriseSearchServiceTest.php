@@ -131,7 +131,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
 
     public function testSchemaRequiresUpdateFalse(): void
     {
-        $definedSchema = new SchemaUpdateRequest();
+        $definedSchema = Injector::inst()->create(SchemaUpdateRequest::class);
         $definedSchema->title = 'text';
         $definedSchema->html_text = 'text';
         $definedSchema->first_name = 'text';
@@ -158,7 +158,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
     public function testSchemaRequiresUpdateNewField(): void
     {
         // There is an extra (new) field in our defined Schema, so we should expect to need an update
-        $definedSchema = new SchemaUpdateRequest();
+        $definedSchema = Injector::inst()->create(SchemaUpdateRequest::class);
         $definedSchema->title = 'text';
         $definedSchema->html_text = 'text';
         $definedSchema->first_name = 'text';
@@ -183,7 +183,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
     public function testSchemaRequiresUpdateUpdatedField(): void
     {
         // We have changed the surname field to be type "number", so we would expect this to require an update
-        $definedSchema = new SchemaUpdateRequest();
+        $definedSchema = Injector::inst()->create(SchemaUpdateRequest::class);
         $definedSchema->title = 'text';
         $definedSchema->html_text = 'text';
         $definedSchema->first_name = 'text';

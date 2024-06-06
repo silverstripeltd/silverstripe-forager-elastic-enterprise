@@ -101,8 +101,13 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         $processedIds = [];
 
         foreach ($documentMap as $indexName => $docsToAdd) {
+            $request = Injector::inst()->create(
+                IndexDocuments::class,
+                $this->environmentizeIndex($indexName),
+                $docsToAdd
+            );
             $response = $this->getClient()->appSearch()
-                ->indexDocuments(new IndexDocuments($this->environmentizeIndex($indexName), $docsToAdd))
+                ->indexDocuments($request)
                 ->asArray();
 
             $this->handleError($response);
@@ -156,8 +161,13 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         }
 
         foreach ($documentMap as $indexName => $idsToRemove) {
+            $request = Injector::inst()->create(
+                DeleteDocuments::class,
+                $this->environmentizeIndex($indexName),
+                $idsToRemove
+            );
             $response = $this->getClient()->appSearch()
-                ->deleteDocuments(new DeleteDocuments($this->environmentizeIndex($indexName), $idsToRemove))
+                ->deleteDocuments($request)
                 ->asArray();
 
             $this->handleError($response);
@@ -186,7 +196,10 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         $client = $this->getClient();
         $numDeleted = 0;
 
-        $request = new ListDocuments($indexName);
+        $request = Injector::inst()->create(
+            ListDocuments::class,
+            $indexName
+        );
         $request->setPageSize($cfg->getBatchSize());
         $request->setCurrentPage(1);
 
@@ -207,9 +220,14 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
                 $idsToRemove[] = $doc['id'];
             }
 
+            $deleteDocsRequest = Injector::inst()->create(
+                DeleteDocuments::class,
+                $indexName,
+                $idsToRemove
+            );
             // Actually delete the documents
             $deletedDocs = $client->appSearch()
-                ->deleteDocuments(new DeleteDocuments($indexName, $idsToRemove))
+                ->deleteDocuments($deleteDocsRequest)
                 ->asArray();
 
             // Keep an accurate running count of the number of documents deleted.
@@ -259,8 +277,13 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         $docs = [];
 
         foreach (array_keys($this->getConfiguration()->getIndexes()) as $indexName) {
+            $request = Injector::inst()->create(
+                GetDocuments::class,
+                $this->environmentizeIndex($indexName),
+                $ids
+            );
             $response = $this->getClient()->appSearch()
-                ->getDocuments(new GetDocuments($this->environmentizeIndex($indexName), $ids))
+                ->getDocuments($request)
                 ->asArray();
 
             $this->handleError($response);
@@ -292,7 +315,10 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      */
     public function listDocuments(string $indexName, ?int $pageSize = null, int $currentPage = 0): array
     {
-        $request = new ListDocuments($this->environmentizeIndex($indexName));
+        $request = Injector::inst()->create(
+            ListDocuments::class,
+            $this->environmentizeIndex($indexName)
+        );
         $request->setCurrentPage($currentPage);
 
         if ($pageSize) {
@@ -331,8 +357,12 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      */
     public function getDocumentTotal(string $indexName): int
     {
+        $request = Injector::inst()->create(
+            ListDocuments::class,
+            $this->environmentizeIndex($indexName)
+        );
         $response = $this->getClient()->appSearch()
-            ->listDocuments(new ListDocuments($this->environmentizeIndex($indexName)))
+            ->listDocuments($request)
             ->asArray();
 
         $this->handleError($response);
@@ -362,9 +392,10 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
             $envIndex = $this->environmentizeIndex($indexName);
             $this->findOrMakeIndex($envIndex);
 
+            $request = Injector::inst()->create(GetSchema::class, $envIndex);
             // Fetch the Schema, as it currently exists in Elastic
             $elasticSchema = $this->getClient()->appSearch()
-                ->getSchema(new GetSchema($envIndex))
+                ->getSchema($request)
                 ->asArray();
 
             $this->handleError($elasticSchema);
@@ -381,9 +412,14 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
                 continue;
             }
 
+            $request = Injector::inst()->create(
+                PutSchema::class,
+                $envIndex,
+                $definedSchema
+            );
             // Trigger an update to Elastic with our current configured Schema
             $newElasticSchema = $this->getClient()->appSearch()
-                ->putSchema(new PutSchema($envIndex, $definedSchema))
+                ->putSchema($request)
                 ->asArray();
 
             $this->handleError($newElasticSchema);
@@ -450,9 +486,11 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
             return;
         }
 
+        $engine = Injector::inst()->create(Engine::class, $index);
+        $request = Injector::inst()->create(CreateEngine::class, $engine);
         $response = $this->getClient()
             ->appSearch()
-            ->createEngine(new CreateEngine(new Engine($index)))
+            ->createEngine($request)
             ->asArray();
 
         $this->handleError($response);
@@ -463,13 +501,12 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      */
     private function fetchPaginatedEngines(int $page = 1): array
     {
-
-        $listEngines = new ListEngines();
-        $listEngines->setCurrentPage($page);
+        $request = Injector::inst()->create(ListEngines::class);
+        $request->setCurrentPage($page);
 
         $response = $this->getClient()
             ->appSearch()
-            ->listEngines($listEngines)
+            ->listEngines($request)
             ->asArray();
 
         $this->handleError($response);
@@ -534,14 +571,14 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      */
     private function getSchemaForFields(array $fields): SchemaUpdateRequest
     {
-        $definedSpecs = new SchemaUpdateRequest();
+        $request = Injector::inst()->create(SchemaUpdateRequest::class);
 
         foreach ($fields as $field) {
             $explicitFieldType = $field->getOption('type') ?? self::DEFAULT_FIELD_TYPE;
-            $definedSpecs->{$field->getSearchFieldName()} = $explicitFieldType;
+            $request->{$field->getSearchFieldName()} = $explicitFieldType;
         }
 
-        return $definedSpecs;
+        return $request;
     }
 
     /**
