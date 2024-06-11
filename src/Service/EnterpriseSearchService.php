@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\SearchServiceElastic\Service;
+namespace SilverStripe\ForagerElasticEnterprise\Service;
 
 use Elastic\EnterpriseSearch\AppSearch\Request\CreateEngine;
 use Elastic\EnterpriseSearch\AppSearch\Request\DeleteDocuments;
@@ -21,15 +21,15 @@ use SilverStripe\Core\Config\Configurable;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Injector\Injector;
-use SilverStripe\SearchService\Exception\IndexConfigurationException;
-use SilverStripe\SearchService\Exception\IndexingServiceException;
-use SilverStripe\SearchService\Interfaces\BatchDocumentRemovalInterface;
-use SilverStripe\SearchService\Interfaces\DocumentInterface;
-use SilverStripe\SearchService\Interfaces\IndexingInterface;
-use SilverStripe\SearchService\Schema\Field;
-use SilverStripe\SearchService\Service\DocumentBuilder;
-use SilverStripe\SearchService\Service\IndexConfiguration;
-use SilverStripe\SearchService\Service\Traits\ConfigurationAware;
+use SilverStripe\Forager\Exception\IndexConfigurationException;
+use SilverStripe\Forager\Exception\IndexingServiceException;
+use SilverStripe\Forager\Interfaces\BatchDocumentRemovalInterface;
+use SilverStripe\Forager\Interfaces\DocumentInterface;
+use SilverStripe\Forager\Interfaces\IndexingInterface;
+use SilverStripe\Forager\Schema\Field;
+use SilverStripe\Forager\Service\DocumentBuilder;
+use SilverStripe\Forager\Service\IndexConfiguration;
+use SilverStripe\Forager\Service\Traits\ConfigurationAware;
 
 class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemovalInterface
 {
@@ -109,6 +109,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
             $response = $this->getClient()->appSearch()
                 ->indexDocuments($request)
                 ->asArray();
+
 
             $this->handleError($response);
 
