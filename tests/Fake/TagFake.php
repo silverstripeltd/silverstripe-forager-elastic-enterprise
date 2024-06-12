@@ -15,6 +15,8 @@ use SilverStripe\Versioned\Versioned;
 class TagFake extends DataObject implements TestOnly
 {
 
+    private static string $table_name = 'Elastic_TagFake';
+
     private static array $db = [
         'Title' => 'Varchar',
     ];
