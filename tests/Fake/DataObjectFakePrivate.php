@@ -1,10 +1,10 @@
 <?php
 
-namespace SilverStripe\SearchServiceElastic\Tests\Fake;
+namespace SilverStripe\ForagerElasticEnterprise\Tests\Fake;
 
 use SilverStripe\Dev\TestOnly;
+use SilverStripe\Forager\Extensions\SearchServiceExtension;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\SearchService\Extensions\SearchServiceExtension;
 
 /**
  * @property string $Title

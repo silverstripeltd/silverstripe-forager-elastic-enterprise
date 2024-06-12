@@ -1,6 +1,6 @@
 <?php
 
-namespace SilverStripe\SearchServiceElastic\Tests\Service;
+namespace SilverStripe\ForagerElasticEnterprise\Tests\Service;
 
 use Elastic\EnterpriseSearch\AppSearch\Schema\SchemaUpdateRequest;
 use Elastic\EnterpriseSearch\Client as ElasticClient;
@@ -13,18 +13,18 @@ use ReflectionMethod;
 use SilverStripe\Core\Environment;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
-use SilverStripe\SearchService\DataObject\DataObjectDocument;
-use SilverStripe\SearchService\Extensions\SearchServiceExtension;
-use SilverStripe\SearchService\Interfaces\IndexingInterface;
-use SilverStripe\SearchService\Service\DocumentBuilder;
-use SilverStripe\SearchService\Service\IndexConfiguration;
-use SilverStripe\SearchServiceElastic\Service\EnterpriseSearchService;
-use SilverStripe\SearchServiceElastic\Tests\Fake\DataObjectFake;
-use SilverStripe\SearchServiceElastic\Tests\Fake\DataObjectFakePrivate;
-use SilverStripe\SearchServiceElastic\Tests\Fake\DataObjectFakeVersioned;
-use SilverStripe\SearchServiceElastic\Tests\Fake\ImageFake;
-use SilverStripe\SearchServiceElastic\Tests\Fake\IndexConfigurationFake;
-use SilverStripe\SearchServiceElastic\Tests\Fake\TagFake;
+use SilverStripe\Forager\DataObject\DataObjectDocument;
+use SilverStripe\Forager\Extensions\SearchServiceExtension;
+use SilverStripe\Forager\Interfaces\IndexingInterface;
+use SilverStripe\Forager\Service\DocumentBuilder;
+use SilverStripe\Forager\Service\IndexConfiguration;
+use SilverStripe\ForagerElasticEnterprise\Service\EnterpriseSearchService;
+use SilverStripe\ForagerElasticEnterprise\Tests\Fake\DataObjectFake;
+use SilverStripe\ForagerElasticEnterprise\Tests\Fake\DataObjectFakePrivate;
+use SilverStripe\ForagerElasticEnterprise\Tests\Fake\DataObjectFakeVersioned;
+use SilverStripe\ForagerElasticEnterprise\Tests\Fake\ImageFake;
+use SilverStripe\ForagerElasticEnterprise\Tests\Fake\IndexConfigurationFake;
+use SilverStripe\ForagerElasticEnterprise\Tests\Fake\TagFake;
 use SilverStripe\Security\Member;
 
 class EnterpriseSearchServiceTest extends SapphireTest
@@ -608,7 +608,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
             'content' => [
                 [
                     'id' => sprintf(
-                        'silverstripe_searchserviceelastic_tests_fake_dataobjectfake_%s',
+                        'silverstripe_foragerelasticenterprise_tests_fake_dataobjectfake_%s',
                         $documentOne->ID
                     ),
                     'title' => 'Dataobject one',
@@ -619,7 +619,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
                 ],
                 [
                     'id' => sprintf(
-                        'silverstripe_searchserviceelastic_tests_fake_dataobjectfake_%s',
+                        'silverstripe_foragerelasticenterprise_tests_fake_dataobjectfake_%s',
                         $documentThree->ID
                     ),
                     'title' => 'Dataobject three',

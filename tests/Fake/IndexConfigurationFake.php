@@ -1,9 +1,9 @@
 <?php
 
-namespace SilverStripe\SearchServiceElastic\Tests\Fake;
+namespace SilverStripe\ForagerElasticEnterprise\Tests\Fake;
 
-use SilverStripe\SearchService\Interfaces\DocumentInterface;
-use SilverStripe\SearchService\Service\IndexConfiguration;
+use SilverStripe\Forager\Interfaces\DocumentInterface;
+use SilverStripe\Forager\Service\IndexConfiguration;
 
 class IndexConfigurationFake extends IndexConfiguration
 {

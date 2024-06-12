@@ -1,10 +1,10 @@
 <?php
 
-namespace SilverStripe\SearchServiceElastic\Tests\Fake;
+namespace SilverStripe\ForagerElasticEnterprise\Tests\Fake;
 
 use SilverStripe\Dev\TestOnly;
+use SilverStripe\Forager\Extensions\SearchServiceExtension;
 use SilverStripe\ORM\DataObject;
-use SilverStripe\SearchService\Extensions\SearchServiceExtension;
 use SilverStripe\Versioned\Versioned;
 
 /**
@@ -14,6 +14,8 @@ use SilverStripe\Versioned\Versioned;
  */
 class TagFake extends DataObject implements TestOnly
 {
+
+    private static string $table_name = 'Elastic_TagFake';
 
     private static array $db = [
         'Title' => 'Varchar',
