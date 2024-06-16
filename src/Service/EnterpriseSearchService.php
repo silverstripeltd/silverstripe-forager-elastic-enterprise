@@ -46,6 +46,15 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
 
     private static int $max_document_size = 102400;
 
+    private static string $default_field_type = self::DEFAULT_FIELD_TYPE;
+
+    private static array $valid_field_types = [
+        self::DEFAULT_FIELD_TYPE,
+        'date',
+        'number',
+        'geolocation',
+    ];
+
     public function __construct(Client $client, IndexConfiguration $configuration, DocumentBuilder $exporter)
     {
         $this->setClient($client);
@@ -575,7 +584,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         $request = Injector::inst()->create(SchemaUpdateRequest::class);
 
         foreach ($fields as $field) {
-            $explicitFieldType = $field->getOption('type') ?? self::DEFAULT_FIELD_TYPE;
+            $explicitFieldType = $field->getOption('type') ?? $this->config()->get('default_field_type');
             $request->{$field->getSearchFieldName()} = $explicitFieldType;
         }
 
@@ -587,12 +596,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      */
     private function validateIndex(string $index): void
     {
-        $validTypes = [
-            self::DEFAULT_FIELD_TYPE,
-            'date',
-            'number',
-            'geolocation',
-        ];
+        $validTypes = $this->config()->get('valid_field_types') ?? [];
 
         $map = [];
 
@@ -609,7 +613,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
             // Loop through each field that has been defined for that Class
             foreach ($this->getConfiguration()->getFieldsForClass($class) as $field) {
                 // Check to see if a Type has been defined, or just default to what we have defined
-                $type = $field->getOption('type') ?? self::DEFAULT_FIELD_TYPE;
+                $type = $field->getOption('type') ?? $this->config()->get('default_field_type');
 
                 // We can't progress if a type that we don't support has been defined
                 if (!in_array($type, $validTypes, true)) {
