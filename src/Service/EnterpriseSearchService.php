@@ -49,10 +49,10 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
     private static string $default_field_type = self::DEFAULT_FIELD_TYPE;
 
     private static array $valid_field_types = [
-        self::DEFAULT_FIELD_TYPE,
-        'date',
-        'number',
-        'geolocation',
+        'text' => self::DEFAULT_FIELD_TYPE,
+        'date' => 'date',
+        'number' => 'number',
+        'geolocation' => 'geolocation',
     ];
 
     public function __construct(Client $client, IndexConfiguration $configuration, DocumentBuilder $exporter)
@@ -596,7 +596,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      */
     private function validateIndex(string $index): void
     {
-        $validTypes = $this->config()->get('valid_field_types') ?? [];
+        $validTypes = array_filter(array_values($this->config()->get('valid_field_types'))) ?? [];
 
         $map = [];
 
