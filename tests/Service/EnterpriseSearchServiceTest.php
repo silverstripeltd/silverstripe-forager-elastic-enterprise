@@ -211,6 +211,9 @@ class EnterpriseSearchServiceTest extends SapphireTest
             'html_text' => 'text',
             'first_name' => 'text',
             'surname' => 'text',
+            'source_class' => 'text',
+            'record_base_class' => 'text',
+            'record_id' => 'text',
         ];
 
         $fields = $this->searchService->getConfiguration()->getFieldsForIndex('content');
@@ -726,6 +729,9 @@ class EnterpriseSearchServiceTest extends SapphireTest
             'first_name' => 'text',
             'surname' => 'text',
             'page_content' => 'text',
+            'source_class' => 'text',
+            'record_base_class' => 'text',
+            'record_id' => 'text',
         ];
 
         // Expected Schemas at the end of all of that is just our "content" schema with exactly what we expect to get
