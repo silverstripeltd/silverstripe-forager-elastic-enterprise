@@ -5,15 +5,8 @@ Elastic's [Enterprise Search PHP library](https://github.com/elastic/enterprise-
 
 Elastic Enterprise Search provider for [Silverstripe Forager](https://github.com/silverstripeltd/silverstripe-forager).
 
-This module **does not** provide any method for performing searches on your engines - we've added some [suggestions](#searching) though.
-
-## Requirements
-
--   php: ^8.1
--   silverstripe/framework: ^5
--   silverstripe/silverstripe-forager: ^1
--   elastic/enterprise-search: ^8.3
--   guzzlehttp/guzzle: ^7
+This module **does not** provide any method for performing searches on your engines - we've added some
+[suggestions](#searching) though.
 
 ## Installation
 
@@ -34,10 +27,10 @@ ENTERPRISE_SEARCH_ENGINE_PREFIX="value-excluding-index-name"
 The most notable configuration surface for EnterpriseSearch is the schema, which determines how data is stored in your
 EnterpriseSearch index (engine). There are four types of data in EnterpriseSearch:
 
--   `text` (default)
--   `date`
--   `number`
--   `geolocation`
+- `text` (default)
+- `date`
+- `number`
+- `geolocation`
 
 You can specify these data types in the `options` node of your fields.
 
@@ -64,14 +57,16 @@ At the time of writing there is a limit of 64 fields per engine.
 Majority of documentation is provided by the Silverstripe Forager module. A couple in particular that might be
 useful to you are:
 
--   [Configuration](https://github.com/silverstripeltd/silverstripe-forager/blob/1/docs/en/configuration.md)
--   [Customisation](https://github.com/silverstripeltd/silverstripe-forager/blob/1/docs/en/customising.md)
+- [Configuration](https://github.com/silverstripeltd/silverstripe-forager/blob/1/docs/en/configuration.md)
+- [Customisation](https://github.com/silverstripeltd/silverstripe-forager/blob/1/docs/en/customising.md)
 
 ## Searching
 
 ### PHP
 
-To search via PHP you can use the [silverstripe-discoverer](https://github.com/silverstripeltd/silverstripe-discoverer) along with the [silverstripe-discoverer-elastic-enterprise](https://github.com/silverstripeltd/silverstripe-discoverer-elastic-enterprise) provider module.
+To search via PHP you can use the [silverstripe-discoverer](https://github.com/silverstripeltd/silverstripe-discoverer)
+along with the [silverstripe-discoverer-elastic-enterprise](https://github.com/silverstripeltd/silverstripe-discoverer-elastic-enterprise)
+provider module.
 
 ### JS
 
@@ -80,10 +75,10 @@ be used with vanilla JS or any framework like React, Vue, etc.
 
 There are two main libraries:
 
--   [@elastic/search-ui-app-search-connector](https://www.npmjs.com/package/@elastic/search-ui-app-search-connector)
-    -   Provides a class to help you connect to your Elastic App Search API.
--   [@elastic/search-ui](https://www.npmjs.com/package/@elastic/search-ui)
-    -   Provides a class that allows you to perform searches and manage your search state.
+- [@elastic/search-ui-app-search-connector](https://www.npmjs.com/package/@elastic/search-ui-app-search-connector)
+  - Provides a class to help you connect to your Elastic App Search API.
+- [@elastic/search-ui](https://www.npmjs.com/package/@elastic/search-ui)
+  - Provides a class that allows you to perform searches and manage your search state.
 
 If you are using React, then there is also
 [@elastic/react-search-ui](https://www.npmjs.com/package/@elastic/react-search-ui), which provides interface components.
