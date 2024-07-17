@@ -1,9 +1,9 @@
 # 🧺 Silverstripe Forager > <img src="https://www.elastic.co/android-chrome-192x192.png" style="height:40px; vertical-align:middle"/> Elastic Enterprise Search Provider
 
-Elastic Enterprise Search provider for [Silverstripe Forager](https://github.com/silverstripeltd/silverstripe-forager).
+This module provides the ability to index content for an Elastic Enterprise Search (AKA App Search) engine using
+Elastic's [Enterprise Search PHP library](https://github.com/elastic/enterprise-search-php).
 
-This module uses Elastic's [Enterprise Search PHP library](https://github.com/elastic/enterprise-search-php) to provide
-the ability to index content for an Elastic Enterprise Search (AKA App Search) engine.
+Elastic Enterprise Search provider for [Silverstripe Forager](https://github.com/silverstripeltd/silverstripe-forager).
 
 This module **does not** provide any method for performing searches on your engines - we've added some [suggestions](#searching) though.
 
