@@ -36,16 +36,16 @@ You can specify these data types in the `options` node of your fields.
 
 ```yaml
 SilverStripe\Forager\Service\IndexConfiguration:
-    indexes:
-        myindex:
-            includeClasses:
-                SilverStripe\CMS\Model\SiteTree:
-                    fields:
-                        title: true
-                        summary_field:
-                            property: SummaryField
-                            options:
-                                type: text
+  indexes:
+    myindex:
+      includeClasses:
+        SilverStripe\CMS\Model\SiteTree:
+          fields:
+            title: true
+            summary_field:
+              property: SummaryField
+              options:
+                type: text
 ```
 
 **Note**: Be careful about whimsically changing your schema. EnterpriseSearch may need to be fully reindexed if you
