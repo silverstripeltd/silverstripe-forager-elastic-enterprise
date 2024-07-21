@@ -13,6 +13,13 @@
             "homepage": "http://silverstripe.org"
         }
     ],
+    "keywords": [
+        "Elastic",
+        "Enterprise Search",
+        "Elastic Enterprise Search",
+        "Search",
+        "Silverstripe CMS"
+    ],
     "require": {
         "php": "^8.1",
         "silverstripe/framework": "^5.1",

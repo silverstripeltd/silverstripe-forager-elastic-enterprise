@@ -1,12 +1,16 @@
-# 🧺 Silverstripe Forager > <img src="https://www.elastic.co/android-chrome-192x192.png" style="height:40px; vertical-align:middle"/> Elastic Enterprise Search Provider
+# 🧺 Silverstripe Forager > <img src="https://www.elastic.co/android-chrome-192x192.png" style="height:40px; vertical-align:middle"/> Elastic Enterprise Search provider
 
-This module provides the ability to index content for an Elastic Enterprise Search (AKA App Search) engine using
-Elastic's [Enterprise Search PHP library](https://github.com/elastic/enterprise-search-php).
+This module provides the ability to index content for an App Search engine using Elastic's
+[Enterprise Search PHP library](https://github.com/elastic/enterprise-search-php).
 
 Elastic Enterprise Search provider for [Silverstripe Forager](https://github.com/silverstripeltd/silverstripe-forager).
 
 This module **does not** provide any method for performing searches on your engines - we've added some
 [suggestions](#searching) though.
+
+**Note:** App Search is one of the products included in Elastic Enterprise Search, the two names are currently used
+interchangably in this module. This module does not currently provide support for Workplace Search (which is the
+**other** product that is included in Enterprise Search).
 
 ## Installation
 
@@ -14,18 +18,19 @@ This module **does not** provide any method for performing searches on your engi
 
 ## Activating EnterpriseSearch
 
-To start using EnterpriseSearch, define environment variables containing your private API key, endpoint, and prefix.
+To start using Elastic Enterprise Search, define environment variables containing your private API key, endpoint, and
+prefix.
 
 ```
 ENTERPRISE_SEARCH_ENDPOINT="https://abc123.app-search.ap-southeast-2.aws.found.io"
+ENTERPRISE_SEARCH_ENGINE_PREFIX="engine-name-excluding-variant"
 ENTERPRISE_SEARCH_API_KEY="private-abc123"
-ENTERPRISE_SEARCH_ENGINE_PREFIX="value-excluding-index-name"
 ```
 
-## Configuring EnterpriseSearch
+## Configuring Enterprise Search
 
-The most notable configuration surface for EnterpriseSearch is the schema, which determines how data is stored in your
-EnterpriseSearch index (engine). There are four types of data in EnterpriseSearch:
+The most notable configuration surface for Enterprise Search is the schema, which determines how data is stored in your
+Enterprise Search index (engine). There are four types of data in Enterprise Search:
 
 - `text` (default)
 - `date`
@@ -54,8 +59,8 @@ At the time of writing there is a limit of 64 fields per engine.
 
 ## Additional documentation
 
-Majority of documentation is provided by the Silverstripe Forager module. A couple in particular that might be
-useful to you are:
+Majority of documentation is provided by the Silverstripe Forager module. A couple in particular that might be useful
+to you are:
 
 - [Configuration](https://github.com/silverstripeltd/silverstripe-forager/blob/1/docs/en/configuration.md)
 - [Customisation](https://github.com/silverstripeltd/silverstripe-forager/blob/1/docs/en/customising.md)
