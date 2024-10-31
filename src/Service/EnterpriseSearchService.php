@@ -5,7 +5,6 @@ namespace SilverStripe\ForagerElasticEnterprise\Service;
 use Elastic\EnterpriseSearch\AppSearch\Request\CreateEngine;
 use Elastic\EnterpriseSearch\AppSearch\Request\DeleteDocuments;
 use Elastic\EnterpriseSearch\AppSearch\Request\GetDocuments;
-use Elastic\EnterpriseSearch\AppSearch\Request\GetSchema;
 use Elastic\EnterpriseSearch\AppSearch\Request\IndexDocuments;
 use Elastic\EnterpriseSearch\AppSearch\Request\ListDocuments;
 use Elastic\EnterpriseSearch\AppSearch\Request\ListEngines;
@@ -118,7 +117,6 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
             $response = $this->getClient()->appSearch()
                 ->indexDocuments($request)
                 ->asArray();
-
 
             $this->handleError($response);
 
@@ -402,25 +400,8 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
             $envIndex = $this->environmentizeIndex($indexName);
             $this->findOrMakeIndex($envIndex);
 
-            $request = Injector::inst()->create(GetSchema::class, $envIndex);
-            // Fetch the Schema, as it currently exists in Elastic
-            $elasticSchema = $this->getClient()->appSearch()
-                ->getSchema($request)
-                ->asArray();
-
-            $this->handleError($elasticSchema);
-
             // Fetch the Schema, as it is currently configured in our application
             $definedSchema = $this->getSchemaForFields($this->getConfiguration()->getFieldsForIndex($indexName));
-
-            // Check to see if there are any important differences between our Schemas. If there is, we'll want to
-            // update
-            if (!$this->schemaRequiresUpdate($definedSchema, $elasticSchema)) {
-                // No updates found, add this to our tracked Schemas
-                $schemas[$indexName] = $elasticSchema;
-
-                continue;
-            }
 
             $request = Injector::inst()->create(
                 PutSchema::class,
@@ -698,42 +679,6 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         }
 
         return $documentMap;
-    }
-
-    private function schemaRequiresUpdate(SchemaUpdateRequest $definedSchema, array $elasticSchema): bool
-    {
-        // First we'll loop through the Elastic Schema to see if any current fields have changed in type. If one
-        // or more has, then we know we need to update the Schema, and we can break; early
-        foreach ($elasticSchema as $fieldName => $type) {
-            $definedType = $definedSchema->{$fieldName} ?? null;
-
-            // This field (potentially) no longer exists in our configured Schema
-            if (!$definedType) {
-                continue;
-            }
-
-            // The type has changed. We know we need to update, so we can return now
-            if ($definedType !== $type) {
-                return true;
-            }
-        }
-
-        // Next we'll loop through our configuration Schema and see if any new fields exists that we haven't yet
-        // defined in the Elastic Schema
-        // The easiest thing to do here is just cast the Schema as an array, which turns all Class properties into array
-        // keys
-        foreach (array_keys((array) $definedSchema) as $fieldName) {
-            // Check to see if this field exists in the Elastic Schema
-            $existingType = $elasticSchema[$fieldName] ?? null;
-
-            // If it doesn't, then we know we need to update, and we can return now
-            if (!$existingType) {
-                return true;
-            }
-        }
-
-        // We got all the way to the end, and didn't find anything that needed to be updated
-        return false;
     }
 
 }
