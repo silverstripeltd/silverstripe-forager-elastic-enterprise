@@ -2,7 +2,6 @@
 
 namespace SilverStripe\ForagerElasticEnterprise\Tests\Service;
 
-use Elastic\EnterpriseSearch\AppSearch\Schema\SchemaUpdateRequest;
 use Elastic\EnterpriseSearch\Client as ElasticClient;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
@@ -129,81 +128,6 @@ class EnterpriseSearchServiceTest extends SapphireTest
         ];
     }
 
-    public function testSchemaRequiresUpdateFalse(): void
-    {
-        $definedSchema = Injector::inst()->create(SchemaUpdateRequest::class);
-        $definedSchema->title = 'text';
-        $definedSchema->html_text = 'text';
-        $definedSchema->first_name = 'text';
-        $definedSchema->surname = 'text';
-
-        // There is an extra field in Elastic vs our configuration, but that isn't something that would trigger an
-        // update
-        $elasticSchema = [
-            'title' => 'text',
-            'html_text' => 'text',
-            'first_name' => 'text',
-            'surname' => 'text',
-            'extra' => 'text',
-        ];
-
-        // This method is private, so we need Reflection to access it
-        $reflectionMethod = new ReflectionMethod(EnterpriseSearchService::class, 'schemaRequiresUpdate');
-        $reflectionMethod->setAccessible(true);
-
-        // There are no differences (that we care about), so we would expect this to be false
-        $this->assertFalse($reflectionMethod->invoke($this->searchService, $definedSchema, $elasticSchema));
-    }
-
-    public function testSchemaRequiresUpdateNewField(): void
-    {
-        // There is an extra (new) field in our defined Schema, so we should expect to need an update
-        $definedSchema = Injector::inst()->create(SchemaUpdateRequest::class);
-        $definedSchema->title = 'text';
-        $definedSchema->html_text = 'text';
-        $definedSchema->first_name = 'text';
-        $definedSchema->surname = 'text';
-        $definedSchema->extra = 'text';
-
-        $elasticSchema = [
-            'title' => 'text',
-            'html_text' => 'text',
-            'first_name' => 'text',
-            'surname' => 'text',
-        ];
-
-        // This method is private, so we need Reflection to access it
-        $reflectionMethod = new ReflectionMethod(EnterpriseSearchService::class, 'schemaRequiresUpdate');
-        $reflectionMethod->setAccessible(true);
-
-        // There are no differences (that we care about), so we would expect this to be false
-        $this->assertTrue($reflectionMethod->invoke($this->searchService, $definedSchema, $elasticSchema));
-    }
-
-    public function testSchemaRequiresUpdateUpdatedField(): void
-    {
-        // We have changed the surname field to be type "number", so we would expect this to require an update
-        $definedSchema = Injector::inst()->create(SchemaUpdateRequest::class);
-        $definedSchema->title = 'text';
-        $definedSchema->html_text = 'text';
-        $definedSchema->first_name = 'text';
-        $definedSchema->surname = 'number';
-
-        $elasticSchema = [
-            'title' => 'text',
-            'html_text' => 'text',
-            'first_name' => 'text',
-            'surname' => 'text',
-        ];
-
-        // This method is private, so we need Reflection to access it
-        $reflectionMethod = new ReflectionMethod(EnterpriseSearchService::class, 'schemaRequiresUpdate');
-        $reflectionMethod->setAccessible(true);
-
-        // There are no differences (that we care about), so we would expect this to be false
-        $this->assertTrue($reflectionMethod->invoke($this->searchService, $definedSchema, $elasticSchema));
-    }
-
     public function testGetSchemaForFields(): void
     {
         $expectedSchema = [
@@ -225,7 +149,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         // Invoke our method which should simply result in [no exceptions being thrown]
         $resultSchema = $reflectionMethod->invoke($this->searchService, $fields);
 
-        $this->assertEquals($expectedSchema, (array) $resultSchema);
+        $this->assertEquals($expectedSchema, (array)$resultSchema);
     }
 
     public function testValidateIndex(): void
@@ -662,76 +586,13 @@ class EnterpriseSearchServiceTest extends SapphireTest
                 ],
             ],
         ];
-        // Second Response body is for the call to fetch the current Elastic Schema. We're going to exclude the
-        // surname field, which should trigger an update
-        $secondBody = [
-            'title' => 'text',
-            'html_text' => 'text',
-            'first_name' => 'text',
-            'page_content' => 'text',
-        ];
-        // Third Response body should be the new Schema after the requested change has been made by Elastic
-        $thirdBody = [
-            'title' => 'text',
-            'html_text' => 'text',
-            'first_name' => 'text',
-            'surname' => 'text',
-            'page_content' => 'text',
-        ];
-
-        // Expected Schemas at the end of all of that is just our "content" schema with exactly what we expect to get
-        // from $thirdBody
-        $expectedSchemas = [
-            'content' => $thirdBody,
-        ];
-
-        // Append this mock response to our stack
-        $this->mock->append(new Response(200, $headers, json_encode($firstBody)));
-        $this->mock->append(new Response(200, $headers, json_encode($secondBody)));
-        $this->mock->append(new Response(200, $headers, json_encode($thirdBody)));
-
-        // Trigger our configure() action. There is no response as part of this, we're simply checking that no
-        // Exception is thrown. We can also assume that no update is triggered if nothing breaks, because we've only
-        // mocked 2 Responses, and a 3rd request would be made if we attempted to update
-        $resultSchemas = $this->searchService->configure();
-
-        // Check that our result matches the expected
-        $this->assertEquals($expectedSchemas, $resultSchemas);
-        // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
-        // has been made
-        $this->assertEquals(0, $this->mock->count());
-    }
-
-    public function testConfigureNoUpdate(): void
-    {
-        // Make sure our IndexConfiguration has our IndexVariant set
-        IndexConfiguration::singleton()->setIndexVariant('dev-test');
-
-        // Valid headers that we can use for each Request
-        $headers = [
-            'Content-Type' => 'application/json;charset=utf-8',
-        ];
-        // First Response body is for the call being made as part of findOrMakeIndex()
-        $firstBody = [
-            'results' => [
-                [
-                    'name' => 'dev-test-content',
-                    'type' => 'default',
-                    'language' => 'en',
-                    'document_count' => 0,
-                ],
-            ],
-        ];
-        // Second Response body is for the call to fetch the current Elastic Schema
+        // Second Response body should be the new Schema after the requested change has been made by Elastic
         $secondBody = [
             'title' => 'text',
             'html_text' => 'text',
             'first_name' => 'text',
             'surname' => 'text',
             'page_content' => 'text',
-            'source_class' => 'text',
-            'record_base_class' => 'text',
-            'record_id' => 'text',
         ];
 
         // Expected Schemas at the end of all of that is just our "content" schema with exactly what we expect to get
@@ -744,8 +605,6 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, json_encode($firstBody)));
         $this->mock->append(new Response(200, $headers, json_encode($secondBody)));
 
-        // Trigger our configure() action. We can assume that no update is triggered if nothing breaks, because we've
-        // only mocked 2 Responses, and a 3rd request would be made if we attempted to update
         $resultSchemas = $this->searchService->configure();
 
         // Check that our result matches the expected
