@@ -1,5 +1,15 @@
 # 🧺 Silverstripe Forager > <img src="https://www.elastic.co/android-chrome-192x192.png" style="height:40px; vertical-align:middle"/> Elastic Enterprise Search provider
 
+> [!WARNING]  
+> Elastic Enterprise Search is now reaching End of Life. Elastic has announced that it will not be supported beyond
+> version 8, and that maintenance support will be halted 21 months after the release of version 9 (the date of which
+> is still TBC, but current thinking is early/mid 2025).\
+> https://www.elastic.co/support/eol
+> 
+> Elasticsearch will still be supported into the future, so that is certainly one option that you could look in to.
+> There is currently no Elasticsearch Forager plugin module, but it would certainly be possible (and not too
+> difficult) to create one.
+
 This module provides the ability to index content for an App Search engine using Elastic's
 [Enterprise Search PHP library](https://github.com/elastic/enterprise-search-php).
 
