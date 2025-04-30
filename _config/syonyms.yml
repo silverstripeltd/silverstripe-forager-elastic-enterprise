@@ -1,0 +1,21 @@
+---
+Name: silverstripe-forager-elastic-enterprise-synonyms
+Only:
+  envvarset:
+    - 'ENTERPRISE_SEARCH_API_KEY'
+After:
+  - 'silverstripe-forager-synonyms'
+---
+SilverStripe\Core\Injector\Injector:
+  SilverStripe\Forager\Interfaces\Requests\GetSynonymCollectionsAdaptor:
+    class: SilverStripe\ForagerElasticEnterprise\Adaptors\Requests\GetSynonymCollectionsAdaptor
+  SilverStripe\Forager\Interfaces\Requests\GetSynonymRulesAdaptor:
+    class: SilverStripe\ForagerElasticEnterprise\Adaptors\Requests\GetSynonymRulesAdaptor
+  SilverStripe\Forager\Interfaces\Requests\GetSynonymRuleAdaptor:
+    class: SilverStripe\ForagerElasticEnterprise\Adaptors\Requests\GetSynonymRuleAdaptor
+  SilverStripe\Forager\Interfaces\Requests\CreateSynonymRuleAdaptor:
+    class: SilverStripe\ForagerElasticEnterprise\Adaptors\Requests\CreateSynonymRuleAdaptor
+  SilverStripe\Forager\Interfaces\Requests\UpdateSynonymRuleAdaptor:
+    class: SilverStripe\ForagerElasticEnterprise\Adaptors\Requests\UpdateSynonymRuleAdaptor
+  SilverStripe\Forager\Interfaces\Requests\DeleteSynonymRuleAdaptor:
+    class: SilverStripe\ForagerElasticEnterprise\Adaptors\Requests\DeleteSynonymRuleAdaptor
