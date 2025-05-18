@@ -25,7 +25,7 @@ class CreateSynonymRuleAdaptor implements PostSynonymRuleAdaptorInterface
         $this->client = $client;
     }
 
-    public function process(int|string $synonymCollectionId, SynonymRuleQuery $synonymRule): string|int
+    public function process(int|string $synonymCollectionId, SynonymRuleQuery $synonymRule): SynonymRuleResult
     {
         if ($synonymRule->getType() === SynonymRuleResult::TYPE_DIRECTIONAL) {
             throw new BadMethodCallException('Explicit synonyms are not supported in Elastic Enterprise Search');
@@ -38,7 +38,11 @@ class CreateSynonymRuleAdaptor implements PostSynonymRuleAdaptorInterface
         $body = $this->client->appSearch()->createSynonymSet($request)->asString();
         $body = json_decode($body, true);
 
-        return $body['id'];
+        $synonymRuleResult = SynonymRuleResult::create($body['id']);
+        $synonymRuleResult->setType(SynonymRuleResult::TYPE_EQUIVALENT);
+        $synonymRuleResult->setSynonyms($body['synonyms']);
+
+        return $synonymRuleResult;
     }
 
 }

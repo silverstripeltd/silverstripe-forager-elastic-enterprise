@@ -29,7 +29,7 @@ class UpdateSynonymRuleAdaptor implements PatchSynonymRuleAdaptorInterface
         int|string $synonymCollectionId,
         int|string $synonymRuleId,
         SynonymRuleQuery $synonymRule
-    ): string|int {
+    ): SynonymRuleResult {
         if ($synonymRule->getType() === SynonymRuleResult::TYPE_DIRECTIONAL) {
             throw new BadMethodCallException('Explicit synonyms are not supported in Elastic Enterprise Search');
         }
@@ -48,7 +48,11 @@ class UpdateSynonymRuleAdaptor implements PatchSynonymRuleAdaptorInterface
         $body = $this->client->appSearch()->putSynonymSet($request)->asString();
         $body = json_decode($body, true);
 
-        return $body['id'];
+        $synonymRuleResult = SynonymRuleResult::create($body['id']);
+        $synonymRuleResult->setType(SynonymRuleResult::TYPE_EQUIVALENT);
+        $synonymRuleResult->setSynonyms($body['synonyms']);
+
+        return $synonymRuleResult;
     }
 
 }
