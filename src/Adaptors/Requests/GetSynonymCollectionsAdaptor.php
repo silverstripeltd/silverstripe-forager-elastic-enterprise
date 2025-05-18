@@ -2,6 +2,8 @@
 
 namespace SilverStripe\ForagerElasticEnterprise\Adaptors\Requests;
 
+use SilverStripe\Core\Injector\Injector;
+use SilverStripe\Forager\Interfaces\IndexingInterface;
 use SilverStripe\Forager\Interfaces\Requests\GetSynonymCollectionsAdaptor as GetSynonymSetsAdaptorInterface;
 use SilverStripe\Forager\Service\IndexConfiguration;
 use SilverStripe\Forager\Service\Results\SynonymCollection;
@@ -23,11 +25,11 @@ class GetSynonymCollectionsAdaptor implements GetSynonymSetsAdaptorInterface
 
     public function process(): SynonymCollections
     {
+        $indexService = Injector::inst()->get(IndexingInterface::class);
         $synonymCollections = SynonymCollections::create();
-        $enginePrefix = $this->configuration->getIndexVariant();
 
         foreach (array_keys($this->configuration->getIndexes()) as $engineSuffix) {
-            $synonymCollections->add(SynonymCollection::create(sprintf('%s-%s', $enginePrefix, $engineSuffix)));
+            $synonymCollections->add(SynonymCollection::create($indexService->environmentizeIndex($engineSuffix)));
         }
 
         return $synonymCollections;
