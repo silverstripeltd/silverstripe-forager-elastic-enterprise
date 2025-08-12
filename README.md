@@ -1,15 +1,13 @@
 # 🧺 Silverstripe Forager > <img src="https://www.elastic.co/android-chrome-192x192.png" style="height:40px; vertical-align:middle"/> Elastic Enterprise Search provider
 
-> [!WARNING]  
+> [!WARNING]
 > Elastic Enterprise Search is now reaching End of Life. Elastic has announced that it will not be supported beyond
-> version 8, and that maintenance support will be halted 21 months after the release of version 9 (the date of which
-> is still TBC, but current thinking is early/mid 2025).\
-> https://www.elastic.co/support/eol
+> version 8, and that maintenance support for version 8 will be halted on 15th January 2027. See https://www.elastic.co/support/eol
 >
 > Keep in mind, the core Forager module was designed to be service agnostic - so, once you pick a new search
 > provider, you just need to create a plugin module for Forager (if there isn't one already). Your application's
 > search implementation shouldn't actually have to change.
-> 
+>
 > Elasticsearch (which is the core technology that Enterprise Search was built on) will still be supported into the
 > future, so that is definitely one option that you could look in to.
 
