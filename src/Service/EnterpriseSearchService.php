@@ -22,7 +22,6 @@ use SilverStripe\Core\Injector\Injectable;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forager\Exception\IndexConfigurationException;
 use SilverStripe\Forager\Exception\IndexingServiceException;
-use SilverStripe\Forager\Interfaces\BatchDocumentRemovalInterface;
 use SilverStripe\Forager\Interfaces\DocumentInterface;
 use SilverStripe\Forager\Interfaces\IndexingInterface;
 use SilverStripe\Forager\Schema\Field;
@@ -30,7 +29,7 @@ use SilverStripe\Forager\Service\DocumentBuilder;
 use SilverStripe\Forager\Service\IndexConfiguration;
 use SilverStripe\Forager\Service\Traits\ConfigurationAware;
 
-class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemovalInterface
+class EnterpriseSearchService implements IndexingInterface
 {
 
     use Configurable;
@@ -63,10 +62,10 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
 
     public function environmentizeIndex(string $indexName): string
     {
-        $variant = IndexConfiguration::singleton()->getIndexVariant();
+        $prefix = IndexConfiguration::singleton()->getIndexPrefix();
 
-        if ($variant) {
-            return sprintf('%s-%s', $variant, $indexName);
+        if ($prefix) {
+            return sprintf('%s-%s', $prefix, $indexName);
         }
 
         return $indexName;
@@ -91,9 +90,9 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      * @throws IndexingServiceException
      * @throws NotFoundExceptionInterface
      */
-    public function addDocument(DocumentInterface $document): ?string
+    public function addDocument(string $indexSuffix, DocumentInterface $document): ?string
     {
-        $processedIds = $this->addDocuments([$document]);
+        $processedIds = $this->addDocuments($indexSuffix, [$document]);
 
         return array_shift($processedIds);
     }
@@ -103,7 +102,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      * @throws IndexingServiceException
      * @throws NotFoundExceptionInterface
      */
-    public function addDocuments(array $documents): array
+    public function addDocuments(string $indexSuffix, array $documents): array
     {
         $documentMap = $this->getContentMapForDocuments($documents);
         $processedIds = [];
@@ -132,9 +131,9 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      * @param DocumentInterface $document
      * @throws Exception
      */
-    public function removeDocument(DocumentInterface $document): ?string
+    public function removeDocument(string $indexSuffix, DocumentInterface $document): ?string
     {
-        $processedIds = $this->removeDocuments([$document]);
+        $processedIds = $this->removeDocuments($indexSuffix, [$document]);
 
         return array_shift($processedIds);
     }
@@ -143,7 +142,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      * @param DocumentInterface[] $documents
      * @throws Exception
      */
-    public function removeDocuments(array $documents): array
+    public function removeDocuments(string $indexSuffix, array $documents): array
     {
         $documentMap = [];
         $processedIds = [];
@@ -157,7 +156,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
                 ));
             }
 
-            $indexes = $this->getConfiguration()->getIndexesForDocument($document);
+            $indexes = $this->getConfiguration()->getIndexConfigurationsForDocument($document);
 
             foreach (array_keys($indexes) as $indexName) {
                 if (!isset($documentMap[$indexName])) {
@@ -269,9 +268,9 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
     /**
      * @throws IndexingServiceException
      */
-    public function getDocument(string $id): ?DocumentInterface
+    public function getDocument(string $indexSuffix, string $id): ?DocumentInterface
     {
-        $result = $this->getDocuments([$id]);
+        $result = $this->getDocuments($indexSuffix, [$id]);
 
         return $result[0] ?? null;
     }
@@ -280,38 +279,36 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
      * @return DocumentInterface[]
      * @throws IndexingServiceException
      */
-    public function getDocuments(array $ids): array
+    public function getDocuments(string $indexSuffix, array $ids): array
     {
         $docs = [];
 
-        foreach (array_keys($this->getConfiguration()->getIndexes()) as $indexName) {
-            $request = Injector::inst()->create(
-                GetDocuments::class,
-                $this->environmentizeIndex($indexName),
-                $ids
-            );
-            $response = $this->getClient()->appSearch()
-                ->getDocuments($request)
-                ->asArray();
+        $request = Injector::inst()->create(
+            GetDocuments::class,
+            $this->environmentizeIndex($indexSuffix),
+            $ids
+        );
+        $response = $this->getClient()->appSearch()
+            ->getDocuments($request)
+            ->asArray();
 
-            $this->handleError($response);
+        $this->handleError($response);
 
-            $results = $response['results'] ?? null;
+        $results = $response['results'] ?? null;
 
-            if (!$results) {
+        if (!$results) {
+            return [];
+        }
+
+        foreach ($results as $data) {
+            $document = $this->getBuilder()->fromArray($data);
+
+            if (!$document) {
                 continue;
             }
 
-            foreach ($results as $data) {
-                $document = $this->getBuilder()->fromArray($data);
-
-                if (!$document) {
-                    continue;
-                }
-
-                // Stored by identifier as the key just in case one record exists in multiple indexes
-                $docs[$document->getIdentifier()] = $document;
-            }
+            // Stored by identifier as the key just in case one record exists in multiple indexes
+            $docs[$document->getIdentifier()] = $document;
         }
 
         return array_values($docs);
@@ -385,6 +382,72 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
     }
 
     /**
+     * @return int The number of removed Documents from this call
+     */
+    public function clearIndexDocuments(string $indexSuffix, int $batchSize): int
+    {
+        $indexName = $this->environmentizeIndex($indexSuffix);
+        $client = $this->getClient();
+        $numDeleted = 0;
+
+        $request = Injector::inst()->create(
+            ListDocuments::class,
+            $indexName
+        );
+        $request->setPageSize($batchSize);
+        $request->setCurrentPage(1);
+
+        $response = $client->appSearch()
+            ->listDocuments($request)
+            ->asArray();
+
+        $this->handleError($response);
+
+        $results = $response['results'] ?? [];
+
+        // Loop forever until we no longer get any results
+        while (count($results) > 0) {
+            $idsToRemove = [];
+
+            // Create the list of indexed documents to remove
+            foreach ($response['results'] as $doc) {
+                $idsToRemove[] = $doc['id'];
+            }
+
+            $deleteDocsRequest = Injector::inst()->create(
+                DeleteDocuments::class,
+                $indexName,
+                $idsToRemove
+            );
+            // Actually delete the documents
+            $deletedDocs = $client->appSearch()
+                ->deleteDocuments($deleteDocsRequest)
+                ->asArray();
+
+            // Keep an accurate running count of the number of documents deleted.
+            foreach ($deletedDocs as $doc) {
+                $deleted = $doc['deleted'] ?? false;
+
+                // phpcs:ignore SlevomatCodingStandard.ControlStructures.EarlyExit.EarlyExitNotUsed
+                if ($deleted) {
+                    $numDeleted += 1;
+                }
+            }
+
+            // Re-fetch $documents now that we've deleted this batch
+            $response = $client->appSearch()
+                ->listDocuments($request)
+                ->asArray();
+
+            $this->handleError($response);
+
+            $results = $response['results'] ?? [];
+        }
+
+        return $numDeleted;
+    }
+
+    /**
      * Ensure all the engines exist
      *
      * @throws IndexingServiceException
@@ -394,14 +457,16 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
     {
         $schemas = [];
 
-        foreach (array_keys($this->getConfiguration()->getIndexes()) as $indexName) {
+        foreach (array_keys($this->getConfiguration()->getIndexConfigurations()) as $indexName) {
             $this->validateIndex($indexName);
 
             $envIndex = $this->environmentizeIndex($indexName);
             $this->findOrMakeIndex($envIndex);
 
             // Fetch the Schema, as it is currently configured in our application
-            $definedSchema = $this->getSchemaForFields($this->getConfiguration()->getFieldsForIndex($indexName));
+            $definedSchema = $this->getSchemaForFields(
+                $this->getConfiguration()->getIndexDataForSuffix($indexName)->getFields()
+            );
 
             $request = Injector::inst()->create(
                 PutSchema::class,
@@ -590,7 +655,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
         // definitions
 
         // Loop through each Class that has a definition for this index
-        foreach ($this->getConfiguration()->getClassesForIndex($index) as $class) {
+        foreach ($this->getConfiguration()->getIndexDataForSuffix($index)->getClasses() as $class) {
             // Loop through each field that has been defined for that Class
             foreach ($this->getConfiguration()->getFieldsForClass($class) as $field) {
                 // Check to see if a Type has been defined, or just default to what we have defined
@@ -659,7 +724,7 @@ class EnterpriseSearchService implements IndexingInterface, BatchDocumentRemoval
                 continue;
             }
 
-            $indexes = $this->getConfiguration()->getIndexesForDocument($document);
+            $indexes = $this->getConfiguration()->getIndexConfigurationsForDocument($document);
 
             if (!$indexes) {
                 Injector::inst()->get(LoggerInterface::class)->warn(

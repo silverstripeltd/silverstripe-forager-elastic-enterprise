@@ -98,7 +98,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->searchService->validateField($fieldName);
     }
 
-    public function provideFieldsForValidation(): array
+    public static function provideFieldsForValidation(): array
     {
         return [
             [
@@ -525,11 +525,17 @@ class EnterpriseSearchServiceTest extends SapphireTest
 
         $documents = [];
         // This document should be indexable
-        $documents[] = DataObjectDocument::create($documentOne);
+        $doc1 = DataObjectDocument::create($documentOne);
+        $doc1->setDataFrom($this->searchService->getConfiguration()->getIndexDataForSuffix('content'));
+        $documents[] = $doc1;
         // This document should NOT be indexable
-        $documents[] = DataObjectDocument::create($documentTwo);
+        $doc2 = DataObjectDocument::create($documentTwo);
+        $doc2->setDataFrom($this->searchService->getConfiguration()->getIndexDataForSuffix('content'));
+        $documents[] = $doc2;
         // This document should be indexable
-        $documents[] = DataObjectDocument::create($documentThree);
+        $doc3 = DataObjectDocument::create($documentThree);
+        $doc3->setDataFrom($this->searchService->getConfiguration()->getIndexDataForSuffix('content'));
+        $documents[] = $doc3;
 
         $expectedMap = [
             'content' => [
@@ -873,7 +879,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         // Append this mock response to our stack
         $this->mock->append(new Response(200, $headers, $body));
 
-        $documents = $this->searchService->getDocuments([$idOne, $idTwo]);
+        $documents = $this->searchService->getDocuments('content', [$idOne, $idTwo]);
 
         // Check that the total matches what was in the meta response
         $this->assertCount(2, $documents);
@@ -912,7 +918,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         // Append this mock response to our stack
         $this->mock->append(new Response(200, $headers, $body));
 
-        $documents = $this->searchService->getDocuments([123, 321]);
+        $documents = $this->searchService->getDocuments('content', [123, 321]);
 
         // Check that the total matches what was in the meta response
         $this->assertCount(0, $documents);
@@ -942,7 +948,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $body));
 
         // We expect this to throw an exception
-        $this->searchService->getDocuments([123, 321]);
+        $this->searchService->getDocuments('content', [123, 321]);
 
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
         // has been made
@@ -997,7 +1003,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         // Append this mock response to our stack
         $this->mock->append(new Response(200, $headers, $body));
 
-        $resultDocument = $this->searchService->getDocument($id);
+        $resultDocument = $this->searchService->getDocument('content', $id);
 
         // Check that the total matches what was in the meta response
         $this->assertNotNull($resultDocument);
@@ -1029,7 +1035,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         // Append this mock response to our stack
         $this->mock->append(new Response(200, $headers, $body));
 
-        $document = $this->searchService->getDocument(123);
+        $document = $this->searchService->getDocument('content', 123);
 
         // Check that there were no results (so we'd expect null for our one expected document)
         $this->assertNull($document);
@@ -1059,7 +1065,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $body));
 
         // We expect this to throw an exception
-        $this->searchService->getDocument(123);
+        $this->searchService->getDocument('content', 123);
 
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
         // has been made
@@ -1103,7 +1109,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
             '321',
         ];
 
-        $resultIds = $this->searchService->addDocuments($documents);
+        $resultIds = $this->searchService->addDocuments('content', $documents);
 
         $this->assertEqualsCanonicalizing($expectedIds, $resultIds);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
@@ -1114,7 +1120,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
     public function testAddDocumentsEmpty(): void
     {
         // Adding an empty array of documents, we would expect no API calls to be made
-        $resultIds = $this->searchService->addDocuments([]);
+        $resultIds = $this->searchService->addDocuments('content', []);
 
         // We would expect the results to be empty
         $this->assertEqualsCanonicalizing([], $resultIds);
@@ -1145,7 +1151,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $body));
 
         // We expect this to throw an Exception
-        $this->searchService->addDocuments($documents);
+        $this->searchService->addDocuments('content', $documents);
 
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
         // has been made
@@ -1172,7 +1178,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         // Append this mock response to our stack
         $this->mock->append(new Response(200, $headers, $body));
 
-        $resultId = $this->searchService->addDocument($document);
+        $resultId = $this->searchService->addDocument('content', $document);
 
         $this->assertEquals('doc-123', $resultId);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
@@ -1196,7 +1202,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $body));
 
         // Kinda just checking that the array_shift correctly returns null if no results were presented from Elastic
-        $resultId = $this->searchService->addDocument($document);
+        $resultId = $this->searchService->addDocument('content', $document);
 
         $this->assertNull($resultId);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
@@ -1252,7 +1258,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
             '123',
         ];
 
-        $resultIds = $this->searchService->addDocuments($documents);
+        $resultIds = $this->searchService->removeDocuments('content', $documents);
 
         $this->assertEqualsCanonicalizing($expectedIds, $resultIds);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
@@ -1263,7 +1269,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
     public function testRemoveDocumentsEmpty(): void
     {
         // Removing an empty array of documents, we would expect no API calls to be made
-        $resultIds = $this->searchService->removeDocuments([]);
+        $resultIds = $this->searchService->removeDocuments('content', []);
 
         // We would expect the results to be empty
         $this->assertEqualsCanonicalizing([], $resultIds);
@@ -1294,7 +1300,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $body));
 
         // We expect this to throw an Exception
-        $this->searchService->removeDocuments($documents);
+        $this->searchService->removeDocuments('content', $documents);
 
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
         // has been made
@@ -1323,7 +1329,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
 
         $expectedId = sprintf('silverstripe_searchservice_tests_fake_dataobjectfake_%s', $documentOne->ID);
 
-        $resultId = $this->searchService->removeDocument($document);
+        $resultId = $this->searchService->removeDocument('content', $document);
 
         $this->assertEquals($expectedId, $resultId);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
@@ -1347,7 +1353,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $body));
 
         // Kinda just checking that the array_shift correctly returns null if no results were presented from Elastic
-        $resultId = $this->searchService->removeDocument($document);
+        $resultId = $this->searchService->removeDocument('content', $document);
 
         $this->assertNull($resultId);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make

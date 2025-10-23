@@ -3,12 +3,12 @@ Name: silverstripe-forager-elastic-enterprise
 Only:
   envvarset: 'ENTERPRISE_SEARCH_API_KEY'
 After:
-  - 'search-forager-default'
+  - 'silverstripe-forager'
 ---
 SilverStripe\Core\Injector\Injector:
   SilverStripe\Forager\Service\IndexConfiguration:
     constructor:
-      index_variant: '`ENTERPRISE_SEARCH_ENGINE_PREFIX`'
+      indexPrefix: '`ENTERPRISE_SEARCH_ENGINE_PREFIX`'
   SilverStripe\Forager\Interfaces\IndexingInterface:
     class: SilverStripe\ForagerElasticEnterprise\Service\EnterpriseSearchService
     constructor:

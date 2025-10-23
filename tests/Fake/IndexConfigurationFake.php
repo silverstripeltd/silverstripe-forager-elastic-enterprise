@@ -107,4 +107,11 @@ class IndexConfigurationFake extends IndexConfiguration
         return $this->override[__FUNCTION__] ?? parent::getIndexVariant();
     }
 
+    public function setIndexVariant(?string $variant): IndexConfigurationFake
+    {
+        $this->override['getIndexVariant'] = $variant;
+
+        return $this;
+    }
+
 }
