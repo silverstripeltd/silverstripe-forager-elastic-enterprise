@@ -7,6 +7,7 @@ use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Page;
 use ReflectionMethod;
 use SilverStripe\Core\Environment;
@@ -14,7 +15,6 @@ use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Forager\DataObject\DataObjectDocument;
 use SilverStripe\Forager\Extensions\SearchServiceExtension;
-use SilverStripe\Forager\Interfaces\IndexingInterface;
 use SilverStripe\Forager\Service\DocumentBuilder;
 use SilverStripe\Forager\Service\IndexConfiguration;
 use SilverStripe\ForagerElasticEnterprise\Service\EnterpriseSearchService;
@@ -69,24 +69,19 @@ class EnterpriseSearchServiceTest extends SapphireTest
     public function testEnvironmentizeIndex(): void
     {
         // Setting this to null to check that the "no prefix version works
-        IndexConfiguration::singleton()->setIndexVariant(null);
-
-        /** @var IndexingInterface|EnterpriseSearchService $indexer */
-        $indexer = Injector::inst()->get(IndexingInterface::class);
+        IndexConfiguration::singleton()->setIndexPrefix(null);
 
         // No change to our indexName should be made
-        $this->assertEquals('content', $indexer->environmentizeIndex('content'));
+        $this->assertEquals('content', $this->searchService->environmentizeIndex('content'));
 
         // Setting this back to a value to check the appending words
-        IndexConfiguration::singleton()->setIndexVariant('dev-test');
+        IndexConfiguration::singleton()->setIndexPrefix('dev-test');
 
         // Our indexName should now be updated to include our environment name
-        $this->assertEquals('dev-test-content', $indexer->environmentizeIndex('content'));
+        $this->assertEquals('dev-test-content', $this->searchService->environmentizeIndex('content'));
     }
 
-    /**
-     * @dataProvider provideFieldsForValidation
-     */
+    #[DataProvider('provideFieldsForValidation')]
     public function testValidateField(string $fieldName, bool $shouldBeValid): void
     {
         if (!$shouldBeValid) {
@@ -140,7 +135,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
             'record_id' => 'text',
         ];
 
-        $fields = $this->searchService->getConfiguration()->getFieldsForIndex('content');
+        $fields = $this->searchService->getConfiguration()->getIndexDataForSuffix('content')->getFields();
 
         // This method is private, so we need Reflection to access it
         $reflectionMethod = new ReflectionMethod(EnterpriseSearchService::class, 'getSchemaForFields');
@@ -519,22 +514,23 @@ class EnterpriseSearchServiceTest extends SapphireTest
 
     public function testGetContentMapForDocuments(): void
     {
+        $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
         $documentOne = $this->objFromFixture(DataObjectFake::class, 'one');
         $documentTwo = $this->objFromFixture(DataObjectFake::class, 'two');
         $documentThree = $this->objFromFixture(DataObjectFake::class, 'three');
 
         $documents = [];
+
         // This document should be indexable
         $doc1 = DataObjectDocument::create($documentOne);
-        $doc1->setDataFrom($this->searchService->getConfiguration()->getIndexDataForSuffix('content'));
         $documents[] = $doc1;
+
         // This document should NOT be indexable
         $doc2 = DataObjectDocument::create($documentTwo);
-        $doc2->setDataFrom($this->searchService->getConfiguration()->getIndexDataForSuffix('content'));
         $documents[] = $doc2;
+
         // This document should be indexable
-        $doc3 = DataObjectDocument::create($documentThree);
-        $doc3->setDataFrom($this->searchService->getConfiguration()->getIndexDataForSuffix('content'));
+        $doc3 = DataObjectDocument::create($documentThree,);
         $documents[] = $doc3;
 
         $expectedMap = [
@@ -568,14 +564,19 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $reflectionMethod = new ReflectionMethod(EnterpriseSearchService::class, 'getContentMapForDocuments');
         $reflectionMethod->setAccessible(true);
 
-        // Invoke our method which will trigger 2 API calls, and we're expecting the second API call to trigger an error
-        $this->assertEquals($expectedMap, $reflectionMethod->invoke($this->searchService, $documents));
+
+        $indexData->withIndexContext(
+            function () use ($documents, $reflectionMethod, &$expectedMap): void {
+                // This determines whether the document should be added or removed from the index
+                $this->assertEquals($expectedMap, $reflectionMethod->invoke($this->searchService, $documents));
+            }
+        );
     }
 
     public function testConfigureNewField(): void
     {
-        // Make sure our IndexConfiguration has our IndexVariant set
-        IndexConfiguration::singleton()->setIndexVariant('dev-test');
+        // Make sure our IndexConfiguration has our IndexPrefix set
+        IndexConfiguration::singleton()->setIndexPrefix('dev-test');
 
         // Valid headers that we can use for each Request
         $headers = [
@@ -1109,7 +1110,13 @@ class EnterpriseSearchServiceTest extends SapphireTest
             '321',
         ];
 
-        $resultIds = $this->searchService->addDocuments('content', $documents);
+        $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
+
+        $indexData->withIndexContext(
+            function () use ($documents, &$resultIds): void {
+                $resultIds = $this->searchService->addDocuments('content', $documents);
+            }
+        );
 
         $this->assertEqualsCanonicalizing($expectedIds, $resultIds);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
@@ -1119,8 +1126,14 @@ class EnterpriseSearchServiceTest extends SapphireTest
 
     public function testAddDocumentsEmpty(): void
     {
+        $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
+
         // Adding an empty array of documents, we would expect no API calls to be made
-        $resultIds = $this->searchService->addDocuments('content', []);
+        $indexData->withIndexContext(
+            function () use (&$resultIds): void {
+                $resultIds = $this->searchService->addDocuments('content', []);
+            }
+        );
 
         // We would expect the results to be empty
         $this->assertEqualsCanonicalizing([], $resultIds);
@@ -1130,8 +1143,13 @@ class EnterpriseSearchServiceTest extends SapphireTest
     {
         $documentOne = $this->objFromFixture(DataObjectFake::class, 'one');
         $documents = [DataObjectDocument::create($documentOne)];
+        $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
 
-        $this->expectExceptionMessage('Testing failure');
+        $indexData->withIndexContext(
+            function (): void {
+                $this->expectExceptionMessage('Testing failure');
+            }
+        );
 
         // Valid headers
         $headers = [
@@ -1151,7 +1169,11 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $body));
 
         // We expect this to throw an Exception
-        $this->searchService->addDocuments('content', $documents);
+        $indexData->withIndexContext(
+            function () use (&$documents): void {
+                $this->searchService->addDocuments('content', $documents);
+            }
+        );
 
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
         // has been made
@@ -1177,8 +1199,13 @@ class EnterpriseSearchServiceTest extends SapphireTest
 
         // Append this mock response to our stack
         $this->mock->append(new Response(200, $headers, $body));
+        $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
 
-        $resultId = $this->searchService->addDocument('content', $document);
+        $indexData->withIndexContext(
+            function () use (&$document, &$resultId): void {
+                $resultId = $this->searchService->addDocument('content', $document);
+            }
+        );
 
         $this->assertEquals('doc-123', $resultId);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make
@@ -1200,9 +1227,14 @@ class EnterpriseSearchServiceTest extends SapphireTest
 
         // Append this mock response to our stack
         $this->mock->append(new Response(200, $headers, $body));
+        $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
 
         // Kinda just checking that the array_shift correctly returns null if no results were presented from Elastic
-        $resultId = $this->searchService->addDocument('content', $document);
+        $indexData->withIndexContext(
+            function () use (&$document, &$resultId): void {
+                $resultId = $this->searchService->addDocument('content', $document);
+            }
+        );
 
         $this->assertNull($resultId);
         // And make sure nothing is left in our Response Stack. This would indicate that every Request we expect to make

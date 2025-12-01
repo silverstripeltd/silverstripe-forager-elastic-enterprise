@@ -104,20 +104,39 @@
         <exclude name="SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter"/>
         <!-- Don't force single line. Sometime multiline is just easier to read -->
         <exclude name="SlevomatCodingStandard.Functions.RequireSingleLineCall.RequiredSingleLineCall"/>
+        <!-- Attributes order - not enforcing a specific order -->
+        <exclude name="SlevomatCodingStandard.Attributes.AttributesOrder"/>
+        <!-- Allow references in tests for passing values out of closures -->
+        <exclude name="SlevomatCodingStandard.PHP.DisallowReference"/>
     </rule>
 
     <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
         <properties>
             <property name="searchAnnotations" type="bool" value="true"/>
-            <property name="ignoredAnnotationNames" type="array" value="@config"/>
+            <property name="ignoredAnnotationNames" type="array">
+                <element value="@config"/>
+            </property>
         </properties>
     </rule>
 
     <rule ref="SlevomatCodingStandard.Files.TypeNameMatchesFileName">
         <properties>
             <!-- Set the root namespace for our src dir and phpunit dir. Please change these as required -->
-            <property name="rootNamespaces" type="array" value="src=>SilverStripe\ForagerElasticEnterprise,tests=>SilverStripe\ForagerElasticEnterprise\Tests"/>
-            <property name="ignoredNamespaces" type="array" value="Slevomat\Services"/>
+            <property name="rootNamespaces" type="array">
+                <element key="src" value="SilverStripe\ForagerElasticEnterprise"/>
+                <element key="tests" value="SilverStripe\ForagerElasticEnterprise\Tests"/>
+            </property>
+            <property name="ignoredNamespaces" type="array">
+                <element value="Slevomat\Services"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Correct replacement for deprecated OrderedUses sniff -->
+    <rule ref="SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses">
+        <properties>
+            <property name="caseSensitive" value="true"/>
+            <property name="psr12Compatible" value="false"/>
         </properties>
     </rule>
 </ruleset>
