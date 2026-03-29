@@ -2,7 +2,6 @@
 
 namespace SilverStripe\ForagerElasticEnterprise\Tests\Fake;
 
-use SilverStripe\Forager\Interfaces\DocumentInterface;
 use SilverStripe\Forager\Service\IndexConfiguration;
 
 class IndexConfigurationFake extends IndexConfiguration
@@ -37,11 +36,6 @@ class IndexConfigurationFake extends IndexConfiguration
         return $this->override['include_page_html'] ?? parent::shouldIncludePageHTML();
     }
 
-    public function getIndexes(): array
-    {
-        return $this->override['indexes'] ?? parent::getIndexes();
-    }
-
     public function shouldUseSyncJobs(): bool
     {
         return $this->override['use_sync_jobs'] ?? parent::shouldUseSyncJobs();
@@ -62,24 +56,9 @@ class IndexConfigurationFake extends IndexConfiguration
         return $this->override['auto_dependency_tracking'] ?? parent::shouldTrackDependencies();
     }
 
-    public function getIndexesForClassName(string $class): array
-    {
-        return $this->override[__FUNCTION__][$class] ?? parent::getIndexesForClassName($class);
-    }
-
-    public function getIndexesForDocument(DocumentInterface $doc): array
-    {
-        return $this->override[__FUNCTION__][$doc->getIdentifier()] ?? parent::getIndexesForDocument($doc);
-    }
-
     public function isClassIndexed(string $class): bool
     {
         return $this->override[__FUNCTION__][$class] ?? parent::isClassIndexed($class);
-    }
-
-    public function getClassesForIndex(string $index): array
-    {
-        return $this->override[__FUNCTION__][$index] ?? parent::getClassesForIndex($index);
     }
 
     public function getSearchableClasses(): array
@@ -95,11 +74,6 @@ class IndexConfigurationFake extends IndexConfiguration
     public function getFieldsForClass(string $class): ?array
     {
         return $this->override[__FUNCTION__][$class] ?? parent::getFieldsForClass($class);
-    }
-
-    public function getFieldsForIndex(string $index): array
-    {
-        return $this->override[__FUNCTION__][$index] ?? parent::getFieldsForIndex($index);
     }
 
     public function getIndexPrefix(): ?string

@@ -512,67 +512,6 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->assertEquals(0, $this->mock->count());
     }
 
-    public function testGetContentMapForDocuments(): void
-    {
-        $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
-        $documentOne = $this->objFromFixture(DataObjectFake::class, 'one');
-        $documentTwo = $this->objFromFixture(DataObjectFake::class, 'two');
-        $documentThree = $this->objFromFixture(DataObjectFake::class, 'three');
-
-        $documents = [];
-
-        // This document should be indexable
-        $doc1 = DataObjectDocument::create($documentOne);
-        $documents[] = $doc1;
-
-        // This document should NOT be indexable
-        $doc2 = DataObjectDocument::create($documentTwo);
-        $documents[] = $doc2;
-
-        // This document should be indexable
-        $doc3 = DataObjectDocument::create($documentThree,);
-        $documents[] = $doc3;
-
-        $expectedMap = [
-            'content' => [
-                [
-                    'id' => sprintf(
-                        'silverstripe_foragerelasticenterprise_tests_fake_dataobjectfake_%s',
-                        $documentOne->ID
-                    ),
-                    'title' => 'Dataobject one',
-                    'html_text' => 'WHAT ARE WE YELLING ABOUT? Then a break Then a new line and a tab ',
-                    'record_base_class' => DataObjectFake::class,
-                    'record_id' => $documentOne->ID,
-                    'source_class' => DataObjectFake::class,
-                ],
-                [
-                    'id' => sprintf(
-                        'silverstripe_foragerelasticenterprise_tests_fake_dataobjectfake_%s',
-                        $documentThree->ID
-                    ),
-                    'title' => 'Dataobject three',
-                    'html_text' => 'WHAT ARE WE YELLING ABOUT? Then a break Then a new line and a tab ',
-                    'record_base_class' => DataObjectFake::class,
-                    'record_id' => $documentThree->ID,
-                    'source_class' => DataObjectFake::class,
-                ],
-            ],
-        ];
-
-        // This method is private, so we need Reflection to access it
-        $reflectionMethod = new ReflectionMethod(EnterpriseSearchService::class, 'getContentMapForDocuments');
-        $reflectionMethod->setAccessible(true);
-
-
-        $indexData->withIndexContext(
-            function () use ($documents, $reflectionMethod, &$expectedMap): void {
-                // This determines whether the document should be added or removed from the index
-                $this->assertEquals($expectedMap, $reflectionMethod->invoke($this->searchService, $documents));
-            }
-        );
-    }
-
     public function testConfigureNewField(): void
     {
         // Make sure our IndexConfiguration has our IndexPrefix set
@@ -1145,11 +1084,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $documents = [DataObjectDocument::create($documentOne)];
         $indexData = $this->searchService->getConfiguration()->getIndexDataForSuffix('content');
 
-        $indexData->withIndexContext(
-            function (): void {
-                $this->expectExceptionMessage('Testing failure');
-            }
-        );
+        $this->expectExceptionMessage('Testing failure');
 
         // Valid headers
         $headers = [
@@ -1393,7 +1328,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->assertEquals(0, $this->mock->count());
     }
 
-    public function testRemoveAllDocuments(): void
+    public function testClearIndexDocuments(): void
     {
         // Valid headers
         $headers = [
@@ -1502,7 +1437,7 @@ class EnterpriseSearchServiceTest extends SapphireTest
         $this->mock->append(new Response(200, $headers, $bodyFour));
         $this->mock->append(new Response(200, $headers, $bodyFive));
 
-        $numRemoved = $this->searchService->removeAllDocuments('content');
+        $numRemoved = $this->searchService->clearIndexDocuments('content', 100);
 
         // A total of 5 documents were requested to be removed, but only 4 returned deleted = true
         $this->assertEqualsCanonicalizing(4, $numRemoved);

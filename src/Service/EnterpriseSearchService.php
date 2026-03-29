@@ -104,27 +104,48 @@ class EnterpriseSearchService implements IndexingInterface
      */
     public function addDocuments(string $indexSuffix, array $documents): array
     {
-        $documentMap = $this->getContentMapForDocuments($documents);
-        $processedIds = [];
+        $docsToAdd = [];
 
-        foreach ($documentMap as $indexName => $docsToAdd) {
-            $request = Injector::inst()->create(
-                IndexDocuments::class,
-                $this->environmentizeIndex($indexName),
-                $docsToAdd
-            );
-            $response = $this->getClient()->appSearch()
-                ->indexDocuments($request)
-                ->asArray();
+        foreach ($documents as $document) {
+            if (!$document instanceof DocumentInterface) {
+                throw new InvalidArgumentException(sprintf(
+                    '%s not passed an instance of %s',
+                    __FUNCTION__,
+                    DocumentInterface::class
+                ));
+            }
 
-            $this->handleError($response);
+            if (!$document->shouldIndex()) {
+                continue;
+            }
 
-            // Grab all the ID values, and also cast them to string
-            $processedIds += array_map('strval', array_column($response, 'id'));
+            try {
+                $docsToAdd[] = $this->getBuilder()->toArray($document);
+            } catch (IndexConfigurationException $e) {
+                Injector::inst()->get(LoggerInterface::class)->warning(
+                    sprintf('Failed to convert document to array: %s', $e->getMessage())
+                );
+
+                continue;
+            }
         }
 
-        // One document could have existed in multiple indexes, we only care to track it once
-        return array_unique($processedIds);
+        if (!$docsToAdd) {
+            return [];
+        }
+
+        $request = Injector::inst()->create(
+            IndexDocuments::class,
+            $this->environmentizeIndex($indexSuffix),
+            $docsToAdd
+        );
+        $response = $this->getClient()->appSearch()
+            ->indexDocuments($request)
+            ->asArray();
+
+        $this->handleError($response);
+
+        return array_unique(array_map('strval', array_column($response, 'id')));
     }
 
     /**
@@ -144,8 +165,7 @@ class EnterpriseSearchService implements IndexingInterface
      */
     public function removeDocuments(string $indexSuffix, array $documents): array
     {
-        $documentMap = [];
-        $processedIds = [];
+        $idsToRemove = [];
 
         foreach ($documents as $document) {
             if (!$document instanceof DocumentInterface) {
@@ -156,108 +176,25 @@ class EnterpriseSearchService implements IndexingInterface
                 ));
             }
 
-            $indexes = $this->getConfiguration()->getIndexConfigurationsForDocument($document);
-
-            foreach (array_keys($indexes) as $indexName) {
-                if (!isset($documentMap[$indexName])) {
-                    $documentMap[$indexName] = [];
-                }
-
-                $documentMap[$indexName][] = $document->getIdentifier();
-            }
+            $idsToRemove[] = $document->getIdentifier();
         }
 
-        foreach ($documentMap as $indexName => $idsToRemove) {
-            $request = Injector::inst()->create(
-                DeleteDocuments::class,
-                $this->environmentizeIndex($indexName),
-                $idsToRemove
-            );
-            $response = $this->getClient()->appSearch()
-                ->deleteDocuments($request)
-                ->asArray();
-
-            $this->handleError($response);
-
-            // Results here can be marked as deleted true or false. false would indicate that no document with that ID
-            // exists in Elastic - which, is the same result, really
-            // Grab all the ID values, and also cast them to string
-            $processedIds += array_map('strval', array_column($response, 'id'));
+        if (!$idsToRemove) {
+            return [];
         }
-
-        // One document could have existed in multiple indexes, we only care to track it once
-        return array_unique($processedIds);
-    }
-
-    /**
-     * Forcefully remove all documents from the provided index name. Batches the requests to Elastic based upon the
-     * configured batch size, beginning at page 1 and continuing until the index is empty.
-     *
-     * @param string $indexName The index name to remove all documents from
-     * @return int The total number of documents removed
-     */
-    public function removeAllDocuments(string $indexName): int
-    {
-        $indexName = $this->environmentizeIndex($indexName);
-        $cfg = $this->getConfiguration();
-        $client = $this->getClient();
-        $numDeleted = 0;
 
         $request = Injector::inst()->create(
-            ListDocuments::class,
-            $indexName
+            DeleteDocuments::class,
+            $this->environmentizeIndex($indexSuffix),
+            $idsToRemove
         );
-        $request->setPageSize($cfg->getBatchSize());
-        $request->setCurrentPage(1);
-
-        $response = $client->appSearch()
-            ->listDocuments($request)
+        $response = $this->getClient()->appSearch()
+            ->deleteDocuments($request)
             ->asArray();
 
         $this->handleError($response);
 
-        $results = $response['results'] ?? [];
-
-        // Loop forever until we no longer get any results
-        while (count($results) > 0) {
-            $idsToRemove = [];
-
-            // Create the list of indexed documents to remove
-            foreach ($response['results'] as $doc) {
-                $idsToRemove[] = $doc['id'];
-            }
-
-            $deleteDocsRequest = Injector::inst()->create(
-                DeleteDocuments::class,
-                $indexName,
-                $idsToRemove
-            );
-            // Actually delete the documents
-            $deletedDocs = $client->appSearch()
-                ->deleteDocuments($deleteDocsRequest)
-                ->asArray();
-
-            // Keep an accurate running count of the number of documents deleted.
-            foreach ($deletedDocs as $doc) {
-                $deleted = $doc['deleted'] ?? false;
-
-                // phpcs:ignore SlevomatCodingStandard.ControlStructures.EarlyExit.EarlyExitNotUsed
-                if ($deleted) {
-                    $numDeleted += 1;
-                }
-            }
-
-            // Re-fetch $documents now that we've deleted this batch
-            $response = $client->appSearch()
-                ->listDocuments($request)
-                ->asArray();
-
-            $this->handleError($response);
-
-            $results = $response['results'] ?? [];
-        }
-
-        return $numDeleted;
+        return array_unique(array_map('strval', array_column($response, 'id')));
     }
 
     public function getMaxDocumentSize(): int
@@ -690,60 +627,6 @@ class EnterpriseSearchService implements IndexingInterface
                 $map[$field->getSearchFieldName()] = $type;
             }
         }
-    }
-
-    /**
-     * @param DocumentInterface[] $documents
-     * @throws IndexingServiceException
-     * @throws NotFoundExceptionInterface
-     */
-    private function getContentMapForDocuments(array $documents): array
-    {
-        $documentMap = [];
-
-        foreach ($documents as $document) {
-            if (!$document instanceof DocumentInterface) {
-                throw new InvalidArgumentException(sprintf(
-                    '%s not passed an instance of %s',
-                    __FUNCTION__,
-                    DocumentInterface::class
-                ));
-            }
-
-            if (!$document->shouldIndex()) {
-                continue;
-            }
-
-            try {
-                $fields = $this->getBuilder()->toArray($document);
-            } catch (IndexConfigurationException $e) {
-                Injector::inst()->get(LoggerInterface::class)->warning(
-                    sprintf('Failed to convert document to array: %s', $e->getMessage())
-                );
-
-                continue;
-            }
-
-            $indexes = $this->getConfiguration()->getIndexConfigurationsForDocument($document);
-
-            if (!$indexes) {
-                Injector::inst()->get(LoggerInterface::class)->warn(
-                    sprintf('No valid indexes found for document %s, skipping...', $document->getIdentifier())
-                );
-
-                continue;
-            }
-
-            foreach (array_keys($indexes) as $indexName) {
-                if (!isset($documentMap[$indexName])) {
-                    $documentMap[$indexName] = [];
-                }
-
-                $documentMap[$indexName][] = $fields;
-            }
-        }
-
-        return $documentMap;
     }
 
 }
