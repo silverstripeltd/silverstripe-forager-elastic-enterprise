@@ -25,7 +25,21 @@ interchangably in this module. This module does not currently provide support fo
 
 ## Installation
 
+### Which version?
+
+| Line | Branch and tags | Requires | Status |
+| --- | --- | --- | --- |
+| 1.x | branch `1`, tags `1.0.0`–`1.1.0` | Silverstripe CMS 5, Forager `^1.3`, PHP `^8.1` | Supported stable line |
+| 2.x | branch `main`, tag `2.0.0-alpha1` | Silverstripe CMS 6, Forager `^2.0`, PHP `^8.3` | Alpha release |
+
+Install the latest 1.x release for CMS5 with:
+
 `composer require silverstripe/silverstripe-forager-elastic-enterprise`
+
+The 2.x line adds CMS 6 and Forager 2 support. It is tagged as an alpha because the API may change with future updates.
+Composer will not resolve it unless you opt in explicitly:
+
+`composer require silverstripe/silverstripe-forager-elastic-enterprise:^2.0@alpha`
 
 ## Activating EnterpriseSearch
 
